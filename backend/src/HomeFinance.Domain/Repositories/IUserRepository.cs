@@ -4,7 +4,8 @@ namespace HomeFinance.Domain.Repositories;
 
 public interface IUserRepository
 {
-    void Add(User user);
-    User? GetByEmail(string email);
-    User? GetById(Guid id);
+    Task AddAsync(User user, CancellationToken cancellationToken = default);
+    Task<User?> GetByNormalizedEmailAsync(string normalizedEmail, CancellationToken cancellationToken = default);
+    Task<User?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+    Task UpdateAsync(User user, CancellationToken cancellationToken = default);
 }

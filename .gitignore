@@ -7,6 +7,9 @@ Thumbs.db
 .idea/
 .env*
 *.log
+appsettings.*.local.json
+*.pem
+*.key
 
 # .NET
 **/bin/

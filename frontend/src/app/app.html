@@ -41,9 +41,9 @@
         </label>
         <label>
           <span>Usuario actual</span>
-          <input type="text" [value]="userId || 'Sin sesión activa'" readonly />
+          <input type="text" [value]="currentUserId || 'Sin sesión activa'" readonly />
         </label>
-        <button type="submit" [disabled]="loading || !userId">Guardar hogar</button>
+        <button type="submit" [disabled]="loading || !accessToken">Guardar hogar</button>
       </form>
     </div>
 

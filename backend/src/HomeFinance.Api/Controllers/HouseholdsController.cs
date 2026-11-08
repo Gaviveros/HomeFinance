@@ -1,4 +1,6 @@
+using System.Security.Claims;
 using HomeFinance.Application.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HomeFinance.Api.Controllers;
@@ -17,14 +19,15 @@ public class HouseholdsController : ControllerBase
     }
 
     [HttpGet]
-    public IActionResult GetAll([FromHeader(Name = "X-User-Id")] string? userIdHeader)
+    [Authorize]
+    public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
     {
-        if (!Guid.TryParse(userIdHeader, out var userId))
+        if (!TryGetAuthenticatedUserId(out var userId))
         {
-            return Unauthorized(new { message = "Debe indicar un usuario autenticado." });
+            return Unauthorized(new { message = "La identidad autenticada no es válida." });
         }
 
-        var households = _householdService.GetHouseholdsForUser(userId)
+        var households = (await _householdService.GetHouseholdsForUserAsync(userId, cancellationToken))
             .Select(h => new
             {
                 id = h.Id,
@@ -38,26 +41,26 @@ public class HouseholdsController : ControllerBase
     }
 
     [HttpPost]
-    public IActionResult Create([FromBody] CreateHouseholdRequest request, [FromHeader(Name = "X-User-Id")] string? userIdHeader)
+    [Authorize]
+    public async Task<IActionResult> Create([FromBody] CreateHouseholdRequest request, CancellationToken cancellationToken)
     {
         if (request is null)
         {
             return BadRequest(new { message = "La petición es obligatoria." });
         }
 
-        var userId = userIdHeader ?? request.UserId;
-        if (!Guid.TryParse(userId, out var parsedUserId))
+        if (!TryGetAuthenticatedUserId(out var userId))
         {
-            return Unauthorized(new { message = "Debe indicar el titular del hogar." });
+            return Unauthorized(new { message = "La identidad autenticada no es válida." });
         }
 
-        var user = _authService.GetUser(parsedUserId);
+        var user = await _authService.GetUserAsync(userId, cancellationToken);
         if (user is null)
         {
             return Unauthorized(new { message = "El usuario no existe o no está autenticado." });
         }
 
-        var result = _householdService.CreateHousehold(user, request.Name);
+        var result = await _householdService.CreateHouseholdAsync(user, request.Name, cancellationToken);
         if (!result.Success)
         {
             return BadRequest(new { message = result.Error });
@@ -71,9 +74,15 @@ public class HouseholdsController : ControllerBase
     }
 
     [HttpGet("{id}/settings")]
-    public IActionResult GetSettings(Guid id)
+    [Authorize]
+    public async Task<IActionResult> GetSettings(Guid id, CancellationToken cancellationToken)
     {
-        var household = _householdService.GetHousehold(id);
+        if (!TryGetAuthenticatedUserId(out var userId))
+        {
+            return Unauthorized(new { message = "La identidad autenticada no es válida." });
+        }
+
+        var household = await _householdService.GetHouseholdAsync(id, userId, cancellationToken);
         if (household is null)
         {
             return NotFound(new { message = "El hogar no existe." });
@@ -90,12 +99,22 @@ public class HouseholdsController : ControllerBase
     }
 
     [HttpPut("{id}/settings")]
-    public IActionResult UpdateSettings(Guid id, [FromBody] UpdateHouseholdSettingsRequest request)
+    [Authorize]
+    public async Task<IActionResult> UpdateSettings(
+        Guid id,
+        [FromBody] UpdateHouseholdSettingsRequest request,
+        CancellationToken cancellationToken)
     {
-        var result = _householdService.UpdateSettings(id, request.Name, request.Currency, request.TimeZone);
+        if (!TryGetAuthenticatedUserId(out var userId))
+        {
+            return Unauthorized(new { message = "La identidad autenticada no es válida." });
+        }
+
+        var result = await _householdService.UpdateSettingsAsync(
+            id, userId, request.Name, request.Currency, request.TimeZone, cancellationToken);
         if (!result.Success)
         {
-            return BadRequest(new { message = result.Error });
+            return NotFound(new { message = result.Error });
         }
 
         return Ok(new
@@ -104,12 +123,14 @@ public class HouseholdsController : ControllerBase
             household = result.Household
         });
     }
+
+    private bool TryGetAuthenticatedUserId(out Guid userId) =>
+        Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out userId);
 }
 
 public class CreateHouseholdRequest
 {
     public string Name { get; set; } = string.Empty;
-    public string? UserId { get; set; }
 }
 
 public class UpdateHouseholdSettingsRequest

@@ -12,7 +12,7 @@ public class HouseholdService
         _householdRepository = householdRepository;
     }
 
-    public HouseholdResult CreateHousehold(User? owner, string name)
+    public async Task<HouseholdResult> CreateHouseholdAsync(User? owner, string name, CancellationToken cancellationToken = default)
     {
         if (owner is null || owner.Id == Guid.Empty)
         {
@@ -32,16 +32,23 @@ public class HouseholdService
             TimeZone = "America/Argentina/Cordoba"
         };
 
-        _householdRepository.Add(household);
+        await _householdRepository.AddAsync(household, cancellationToken);
 
         return new HouseholdResult { Success = true, Household = household };
     }
 
-    public Household? GetHousehold(Guid id) => _householdRepository.GetById(id);
+    public Task<Household?> GetHouseholdAsync(Guid id, Guid ownerId, CancellationToken cancellationToken = default) =>
+        _householdRepository.GetByIdForUserAsync(id, ownerId, cancellationToken);
 
-    public HouseholdResult UpdateSettings(Guid householdId, string? name, string? currency, string? timeZone)
+    public async Task<HouseholdResult> UpdateSettingsAsync(
+        Guid householdId,
+        Guid ownerId,
+        string? name,
+        string? currency,
+        string? timeZone,
+        CancellationToken cancellationToken = default)
     {
-        var household = _householdRepository.GetById(householdId);
+        var household = await _householdRepository.GetByIdForUserAsync(householdId, ownerId, cancellationToken);
         if (household is null)
         {
             return new HouseholdResult { Success = false, Error = "El hogar no existe." };
@@ -54,9 +61,11 @@ public class HouseholdService
 
         household.Currency = string.IsNullOrWhiteSpace(currency) ? household.Currency : currency;
         household.TimeZone = string.IsNullOrWhiteSpace(timeZone) ? household.TimeZone : timeZone;
+        await _householdRepository.UpdateAsync(household, cancellationToken);
 
         return new HouseholdResult { Success = true, Household = household };
     }
 
-    public IReadOnlyCollection<Household> GetHouseholdsForUser(Guid userId) => _householdRepository.GetForUser(userId);
+    public Task<IReadOnlyCollection<Household>> GetHouseholdsForUserAsync(Guid userId, CancellationToken cancellationToken = default) =>
+        _householdRepository.GetForUserAsync(userId, cancellationToken);
 }

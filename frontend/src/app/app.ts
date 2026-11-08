@@ -13,7 +13,8 @@ export class App {
   email = '';
   password = '';
   householdName = '';
-  userId = '';
+  accessToken = '';
+  currentUserId = '';
   message = 'Listo para crear tu primer hogar.';
   loading = false;
   apiUrl = 'https://localhost:7265/api';
@@ -29,7 +30,6 @@ export class App {
       password: this.password,
     }).subscribe({
       next: (response) => {
-        this.userId = response.userId;
         this.message = `Usuario creado: ${response.email}`;
         this.loading = false;
       },
@@ -44,12 +44,19 @@ export class App {
     this.loading = true;
     this.message = 'Validando credenciales...';
 
-    this.http.post<{ message: string; userId: string; email: string }>(`${this.apiUrl}/auth/login`, {
+    this.http.post<{
+      message: string;
+      userId: string;
+      email: string;
+      accessToken: string;
+      expiresAt: string;
+    }>(`${this.apiUrl}/auth/login`, {
       email: this.email,
       password: this.password,
     }).subscribe({
       next: (response) => {
-        this.userId = response.userId;
+        this.accessToken = response.accessToken;
+        this.currentUserId = response.userId;
         this.message = `Sesión iniciada para ${response.email}`;
         this.loading = false;
       },
@@ -61,7 +68,7 @@ export class App {
   }
 
   createHousehold(): void {
-    if (!this.userId) {
+    if (!this.accessToken) {
       this.message = 'Primero inicia sesión para crear un hogar.';
       return;
     }
@@ -71,8 +78,8 @@ export class App {
 
     this.http.post<{ message: string; household: { id: string; name: string; currency: string; timeZone: string } }>(
       `${this.apiUrl}/households`,
-      { name: this.householdName, userId: this.userId },
-      { headers: { 'X-User-Id': this.userId } }
+      { name: this.householdName },
+      { headers: { Authorization: `Bearer ${this.accessToken}` } }
     ).subscribe({
       next: (response) => {
         this.message = `${response.message} - ${response.household.name}`;

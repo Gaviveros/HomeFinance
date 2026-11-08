@@ -1,4 +1,5 @@
 using HomeFinance.Application.Services;
+using HomeFinance.Api.Authentication;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HomeFinance.Api.Controllers;
@@ -8,24 +9,28 @@ namespace HomeFinance.Api.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly AuthService _authService;
+    private readonly AccessTokenService _accessTokenService;
 
-    public AuthController(AuthService authService)
+    public AuthController(AuthService authService, AccessTokenService accessTokenService)
     {
         _authService = authService;
+        _accessTokenService = accessTokenService;
     }
 
     [HttpPost("register")]
-    public IActionResult Register([FromBody] RegisterRequest request)
+    public async Task<IActionResult> Register([FromBody] RegisterRequest request, CancellationToken cancellationToken)
     {
         if (request is null)
         {
             return BadRequest(new { message = "La petición es obligatoria." });
         }
 
-        var result = _authService.Register(request.Email, request.Password);
+        var result = await _authService.RegisterAsync(request.Email, request.Password, cancellationToken);
         if (!result.Success)
         {
-            return BadRequest(new { message = result.Error });
+            return result.DuplicateEmail
+                ? Conflict(new { message = result.Error })
+                : BadRequest(new { message = result.Error });
         }
 
         return Ok(new
@@ -37,24 +42,27 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("login")]
-    public IActionResult Login([FromBody] LoginRequest request)
+    public async Task<IActionResult> Login([FromBody] LoginRequest request, CancellationToken cancellationToken)
     {
         if (request is null)
         {
             return BadRequest(new { message = "La petición es obligatoria." });
         }
 
-        var result = _authService.Login(request.Email, request.Password);
+        var result = await _authService.LoginAsync(request.Email, request.Password, cancellationToken);
         if (!result.Success)
         {
             return BadRequest(new { message = result.Error });
         }
 
+        var (token, expiresAt) = _accessTokenService.CreateToken(result.User!);
         return Ok(new
         {
             message = "Inicio de sesión correcto.",
             userId = result.User!.Id,
-            email = result.User.Email
+            email = result.User.Email,
+            accessToken = token,
+            expiresAt
         });
     }
 }
