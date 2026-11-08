@@ -1,1 +1,2 @@
 Escribe siempre en español y genera documentación en el mismo idioma. La documentación DEBE ser clara, concisa y accesible para todos los miembros del equipo. Los cambios en la constitución DEBEN registrarse y comunicarse a todos los interesados, asegurando que todos comprendan las decisiones arquitectónicas y de diseño.
+Trabajo con tokens limitados, optimiza tu respuesta para que sea lo más informativa posible dentro de las restricciones de tokens.

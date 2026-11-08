@@ -1,0 +1,42 @@
+# General
+.DS_Store
+Thumbs.db
+*.tmp
+*.swp
+.vscode/
+.idea/
+.env*
+*.log
+
+# .NET
+**/bin/
+**/obj/
+*.user
+*.suo
+packages/
+*.db
+*.db-shm
+*.db-wal
+
+# Node / Angular
+node_modules/
+dist/
+build/
+coverage/
+.angular/
+.npm/
+
+# Docker / Terraform / Kubernetes
+.dockerignore
+.terraform/
+*.tfstate*
+*.tfvars
+.terraform.lock.hcl
+*.secret.yaml
+secrets/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/

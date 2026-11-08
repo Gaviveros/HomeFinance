@@ -1,0 +1,55 @@
+<main class="page-shell">
+  <section class="panel">
+    <div class="hero">
+      <p class="eyebrow">HomeFinance</p>
+      <h1>Acceso y configuración del hogar</h1>
+      <p class="lead">Registra tu cuenta, inicia sesión y crea tu hogar con moneda y zona horaria predeterminadas.</p>
+    </div>
+
+    <div class="card-grid">
+      <form class="card" (submit)="$event.preventDefault(); register()">
+        <h2>Registro</h2>
+        <label>
+          <span>Correo</span>
+          <input type="email" [(ngModel)]="email" name="register-email" placeholder="nombre@correo.com" />
+        </label>
+        <label>
+          <span>Contraseña</span>
+          <input type="password" [(ngModel)]="password" name="register-password" placeholder="Mínimo 8 caracteres" />
+        </label>
+        <button type="submit" [disabled]="loading">Crear cuenta</button>
+      </form>
+
+      <form class="card" (submit)="$event.preventDefault(); login()">
+        <h2>Inicio de sesión</h2>
+        <label>
+          <span>Correo</span>
+          <input type="email" [(ngModel)]="email" name="login-email" placeholder="nombre@correo.com" />
+        </label>
+        <label>
+          <span>Contraseña</span>
+          <input type="password" [(ngModel)]="password" name="login-password" placeholder="Tu contraseña" />
+        </label>
+        <button type="submit" [disabled]="loading">Iniciar sesión</button>
+      </form>
+
+      <form class="card wide" (submit)="$event.preventDefault(); createHousehold()">
+        <h2>Crear hogar</h2>
+        <label>
+          <span>Nombre del hogar</span>
+          <input type="text" [(ngModel)]="householdName" name="household-name" placeholder="Casa del grupo" />
+        </label>
+        <label>
+          <span>Usuario actual</span>
+          <input type="text" [value]="userId || 'Sin sesión activa'" readonly />
+        </label>
+        <button type="submit" [disabled]="loading || !userId">Guardar hogar</button>
+      </form>
+    </div>
+
+    <div class="status" aria-live="polite">
+      <strong>Estado:</strong>
+      <span>{{ message }}</span>
+    </div>
+  </section>
+</main>
